@@ -69,7 +69,7 @@ class Scanner(object):
 
         # Analyze response bodies
         self.dynamicParser = DynamicContentParser(
-            self.requester, firstPath, firstResponse.body, secondResponse.body
+            self.requester, firstPath if firstPath is not None else '', firstResponse.body, secondResponse.body
         )
 
         baseRatio = float(
