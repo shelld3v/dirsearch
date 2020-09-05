@@ -240,6 +240,7 @@ class Controller(object):
             str(self.httpmethod),
             self.recursive,
             str(self.recursive_level_max),
+            self.arguments.fullurl,
         )
 
     def getSavePath(self):
