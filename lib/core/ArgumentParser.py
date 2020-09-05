@@ -298,7 +298,7 @@ class ArgumentParser(object):
         self.testFailPath = config.safe_get("general", "scanner-fail-path", "").strip()
         self.saveHome = config.safe_getboolean("general", "save-logs-home", False)
         self.defaultExtensions = config.safe_get("general", "default-extensions", "php,asp,aspx,jsp,js,do,action,html,js,json,yml,yaml,xml,cfg,bak,txt,md,sql,zip,tar.gz,tgz")
-        self.fullurl = config.safe_get("general", "fullurl", False)
+        self.fullurl = config.safe_getboolean("general", "fullurl", False)
 
         # Reports
         self.quietMode = config.safe_get("reports", "quiet-mode", False)
