@@ -225,6 +225,7 @@ class ArgumentParser(object):
         self.suppressEmpty = options.suppressEmpty
         self.minimumResponseSize = options.minimumResponseSize
         self.maximumResponseSize = options.maximumResponseSize
+        self.fullurl = options.fullurl
 
 
         if options.scanSubdirs is not None:
@@ -297,6 +298,7 @@ class ArgumentParser(object):
         self.testFailPath = config.safe_get("general", "scanner-fail-path", "").strip()
         self.saveHome = config.safe_getboolean("general", "save-logs-home", False)
         self.defaultExtensions = config.safe_get("general", "default-extensions", "php,asp,aspx,jsp,js,do,action,html,js,json,yml,yaml,xml,cfg,bak,txt,md,sql,zip,tar.gz,tgz")
+        self.fullurl = config.safe_get("general", "fullurl", False)
 
         # Reports
         self.quietMode = config.safe_get("reports", "quiet-mode", False)
@@ -425,6 +427,8 @@ class ArgumentParser(object):
                            help='Headers to add (example: --header "Referer: example.com" --header "User-Agent: IE")',
                            action='append', type='string', dest='headers', default=None)
         general.add_option('--random-agents', '--random-user-agents', action="store_true", dest='useRandomAgents')
+        general.add_option('--full-url', '--full-url', action='store_true', dest='fullurl'
+                           , default=self.fullurl)
 
         reports = OptionGroup(parser, 'Reports')
         reports.add_option('--simple-report', action='store', help="Only found paths",
