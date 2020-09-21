@@ -21,6 +21,7 @@ import random
 import socket
 import time
 import urllib.parse
+import base64
 
 import thirdparty.requests as requests
 from .RequestException import *
@@ -57,14 +58,14 @@ class Requester(object):
         self.httpmethod = httpmethod
         self.data = data
 
-        # if no backslash, append one
+        # If no backslash, append one
         if not url.endswith("/"):
             url += "/"
 
         parsed = urllib.parse.urlparse(url)
         self.basePath = parsed.path
 
-        # if not protocol specified, set http by default
+        # If not protocol specified, set http by default
         if parsed.scheme not in ["https", "http"]:
             parsed = urllib.parse.urlparse("http://" + url)
             self.basePath = parsed.path
@@ -76,7 +77,18 @@ class Requester(object):
 
         self.host = parsed.netloc.split(":")[0]
 
-        # resolve DNS to decrease overhead
+        # Support HTTP Basic authentication
+        if "@" in self.host:
+            credentials = self.host.split("@")[0]
+            encoded = base64.b64encode(credentials.encode())
+
+            # Set the Authorization header
+            self.setHeader("Authorization", "Basic " + encoded.decode())
+
+            self.host = self.host.split("@")[1]
+
+
+        # Resolve DNS to decrease overhead
         if ip is not None:
             self.ip = ip
         else:
@@ -129,9 +141,9 @@ class Requester(object):
         while i <= self.maxRetries:
 
             try:
-                if self.proxylist is not None:
+                if self.proxylist:
                     proxy = {"https": random.choice(self.proxylist), "http": random.choice(self.proxylist)}
-                elif self.proxy is not None:
+                elif self.proxy:
                     proxy = {"https": self.proxy, "http": self.proxy}
 
                 url = "{0}://{1}:{2}".format(self.protocol, self.host if self.requestByHostname else self.ip, self.port)
@@ -145,19 +157,19 @@ class Requester(object):
 
                 if not url.endswith("/"):
                     url += "/"
-
+                    
                 if path.startswith("/"):
                     path = path[1:]
 
                 url += path
 
                 headers = dict(self.headers)
-                if self.randomAgents is not None:
+                if self.randomAgents:
                     headers["User-agent"] = random.choice(self.randomAgents)
 
                 headers["Host"] = self.host
-                # print("\nScan: "+url)
-                # include port in Host header if it's non-standard
+
+                # Include port in Host header if it's non-standard
                 if (self.protocol == "https" and self.port != 443) or (
                     self.protocol == "http" and self.port != 80
                 ):
@@ -180,6 +192,7 @@ class Requester(object):
                     response.headers,
                     response.content,
                 )
+                
                 time.sleep(self.delay)
                 del headers
                 break
