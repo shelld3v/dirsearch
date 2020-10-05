@@ -46,7 +46,8 @@ VERSION = {
 }
 
 
-program_banner = """
+program_banner = \
+"""
   _|. _ _  _  _  _ _|_    v{MAYOR_VERSION}.{MINOR_VERSION}.{REVISION}
  (_||| _) (/_(_|| (_| )
 """.format(**VERSION)
