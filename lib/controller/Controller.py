@@ -46,15 +46,14 @@ VERSION = {
 }
 
 
+program_banner = """
+  _|. _ _  _  _  _ _|_    v{MAYOR_VERSION}.{MINOR_VERSION}.{REVISION}
+ (_||| _) (/_(_|| (_| )
+""".format(**VERSION)
+
+
 class Controller(object):
     def __init__(self, script_path, arguments, output):
-        global VERSION
-        program_banner = (
-            open(FileUtils.buildPath(script_path, "lib", "controller", "banner.txt"))
-            .read()
-            .format(**VERSION)
-        )
-
         self.script_path = script_path
         self.exit = False
         self.arguments = arguments
