@@ -118,7 +118,10 @@ class Requester(object):
         self.randomAgents = None
         self.requestByHostname = requestByHostname
         self.session = requests.Session()
-        self.url = "{0}://{1}:{2}".format(self.protocol, self.host if self.requestByHostname else self.ip, self.port)
+        self.quote = lambda url: urllib.parse.quote(url, safe=":/~?%&+-=$!@^*()[]{}<>;'\"|\\,._")
+        self.url = self.quote(
+            "{0}://{1}:{2}".format(self.protocol, self.host if self.requestByHostname else self.ip, self.port)
+        )
 
     def setHeader(self, header, content):
         self.headers[header.strip()] = content.strip()
@@ -179,7 +182,9 @@ class Requester(object):
                 raise RequestException({"message": "Too many redirects: {0}".format(e)})
 
             except requests.exceptions.SSLError:
-                self.url = "{0}://{1}:{2}".format(self.protocol, self.host, self.port)
+                self.url = self.quote(
+                    "{0}://{1}:{2}".format(self.protocol, self.host, self.port)
+                )
                 continue
 
             except requests.exceptions.ConnectionError as e:
