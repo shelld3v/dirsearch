@@ -273,7 +273,6 @@ class ArgumentParser(object):
         self.capitalization = options.capitalization
         self.forceExtensions = options.forceExtensions
         self.data = options.data
-        self.noDotExtensions = options.noDotExtensions
         self.simpleOutputFile = options.simpleOutputFile
         self.plainTextOutputFile = options.plainTextOutputFile
         self.jsonOutputFile = options.jsonOutputFile
@@ -385,7 +384,6 @@ class ArgumentParser(object):
         self.uppercase = config.safe_getboolean("dictionary", "uppercase", False)
         self.capitalization = config.safe_getboolean("dictionary", "capitalization", False)
         self.forceExtensions = config.safe_getboolean("dictionary", "force-extensions", False)
-        self.noDotExtensions = config.safe_getboolean("dictionary", "no-dot-extensions", False)
 
         # Connection
         self.useRandomAgents = config.safe_get(
@@ -437,8 +435,6 @@ You can change the dirsearch default configurations (default extensions, timeout
                               help='Force extensions for every wordlist entry. Add %NOFORCE% at the end of the entry in the wordlist that you do not want to force')
         dictionary.add_option('--no-extension', dest='noExtension', action='store_true',
                               help='Remove extensions in all wordlist entries (Example: admin.php -> admin)')
-        dictionary.add_option('--no-dot-extensions', dest='noDotExtensions', default=self.noDotExtensions,
-                              help='Remove the "." character before extensions', action='store_true')
         dictionary.add_option('-C', '--capitalization', action='store_true', dest='capitalization', default=self.capitalization,
                               help='Capital wordlist')
         dictionary.add_option('-U', '--uppercase', action='store_true', dest='uppercase', default=self.uppercase,
