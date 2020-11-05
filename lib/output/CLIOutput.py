@@ -169,7 +169,7 @@ class CLIOutput(object):
         self.newLine(message)
 
     def header(self, text):
-        message = Style.BRIGHT + Fore.MAGENTA + text + Style.RESET_ALL
+        message = Style.BRIGHT + Fore.BLUE + text + Style.RESET_ALL
         self.newLine(message)
 
 
