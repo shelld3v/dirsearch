@@ -30,7 +30,7 @@ with the proxy:
 from __future__ import absolute_import
 
 try:
-    import PySocks.socks
+    from .PySocks import socks
 except ImportError:
     import warnings
 
