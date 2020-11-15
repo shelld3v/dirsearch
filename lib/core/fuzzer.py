@@ -24,6 +24,22 @@ from .scanner import *
 
 
 class Fuzzer(object):
+    """
+    Fuzzer.Fuzzer() behavior
+
+    Threads:
+      1. Dirsearch will start several brute-forcing processes based on the user setup
+      2. Each "brute-forcer" will take a word in the wordlist then perform a request
+         with it
+      3. The response will be analyzed after then
+
+    Calibration:
+      1. First, before start brute-forcing, dirsearch will analyze the wildcard responses
+      2. Then, for each response came from brute-forcers, it will check if that response the same
+         as the wildcard response. If yes, then pass
+      3. Dirsearch will run wildcard testing for files start with ".", directories, and extensions
+    """
+
     def __init__(
         self,
         requester,
