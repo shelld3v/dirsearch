@@ -126,15 +126,19 @@ class Requester(object):
         self.session = requests.Session()
         self.url = "{0}://{1}:{2}".format(self.protocol, self.host if self.requestByHostname else self.ip, self.port)
 
+    # Set HTTP headers
     def setHeader(self, header, content):
         self.headers[header.strip()] = content.strip()
 
+    # Choose a random User-Agent
     def setRandomAgents(self, agents):
         self.randomAgents = list(agents)
 
+    # Unset random user-agents option
     def unsetRandomAgents(self):
         self.randomAgents = None
 
+    # Perform the HTTP request
     def request(self, path, proxy=None):
         i = 0
         result = None
