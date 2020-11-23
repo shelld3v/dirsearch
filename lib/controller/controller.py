@@ -242,6 +242,7 @@ class Controller(object):
 
         self.output.warning("\nTask Completed")
 
+    # Print the dirsearch configuration
     def printConfig(self):
 
         self.output.config(
@@ -253,9 +254,8 @@ class Controller(object):
             str(self.httpmethod),
         )
 
+    # Get output folder location for logs, reports, ...
     def getSavePath(self):
-        basePath = None
-        dirPath = None
         basePath = os.path.expanduser("~")
 
         if os.name == "nt":
@@ -265,6 +265,8 @@ class Controller(object):
 
         return FileUtils.build_path(basePath, dirPath)
 
+    # Get ignore paths for 400, 403, 500 response codes, fetched
+    # from blacklist files in the "db/" folder
     def getBlacklists(self):
         reext = re.compile(r'\%ext\%', re.IGNORECASE)
         blacklists = {}
@@ -304,6 +306,7 @@ class Controller(object):
 
         return blacklists
 
+    # Setup error log file
     def setupErrorLogs(self):
         fileName = "errors-{0}.log".format(time.strftime("%y-%m-%d_%H-%M-%S"))
         self.errorLogPath = FileUtils.build_path(
@@ -311,6 +314,7 @@ class Controller(object):
         )
         self.errorLog = open(self.errorLogPath, "w")
 
+    # Setup batch reports: create a batch folder to save reports inside
     def setupBatchReports(self):
         self.batch = True
         self.batchSession = "BATCH-{0}".format(time.strftime("%y-%m-%d_%H-%M-%S"))
@@ -338,6 +342,7 @@ class Controller(object):
             )
             sys.exit(1)
 
+    # Setup user-specified output files and autosave reports
     def setupReports(self, requester):
         if self.arguments.autoSave:
 
@@ -489,6 +494,7 @@ class Controller(object):
                 )
             )
 
+    # Check if the found path matchs all conditions to perform further actions (output, recursion, ...)
     # TODO: Refactor, this function should be a decorator for all the filters
     def matchCallback(self, path):
         self.index += 1
@@ -550,11 +556,13 @@ class Controller(object):
 
                 del path
 
+    # Not found callback
     def notFoundCallback(self, path):
         self.index += 1
         self.output.lastPath(path, self.index, len(self.dictionary), self.currentJob, self.allJobs)
         del path
 
+    # Received a connection error
     def errorCallback(self, path, errorMsg):
         if self.arguments.exit_on_error:
             self.exit = True
@@ -568,6 +576,7 @@ class Controller(object):
 
             self.output.addConnectionError()
 
+    # Write errors to the error log file
     def appendErrorLog(self, path, errorMsg):
         with self.threadsLock:
             line = time.strftime("[%y-%m-%d %H:%M:%S] - ")
@@ -575,6 +584,7 @@ class Controller(object):
             self.errorLog.write(os.linesep + line)
             self.errorLog.flush()
 
+    # Handle user keyboard interruption
     def handleInterrupt(self):
         self.output.warning("CTRL+C detected: Pausing threads, please wait...")
         self.fuzzer.pause()
@@ -616,6 +626,7 @@ class Controller(object):
             self.exit = True
             raise KeyboardInterrupt
 
+    # Process paths
     def processPaths(self):
         while True:
             try:
@@ -626,6 +637,7 @@ class Controller(object):
             except (KeyboardInterrupt, SystemExit):
                 self.handleInterrupt()
 
+    # Get ready to start scanning a directory
     def wait(self):
         while not self.directories.empty():
             gc.collect()
@@ -644,6 +656,8 @@ class Controller(object):
 
         return
 
+    # Check if the found directory is a sub-directory of the currect directory
+    # and matches all conditions before add it to the Queue
     def addDirectory(self, path):
         if path.endswith("/"):
             if path in [directory + "/" for directory in self.excludeSubdirs]:
@@ -667,9 +681,9 @@ class Controller(object):
         else:
             return False
 
+    # Resolve the redirect header relative to the current URL and add the
+    # path to Queue if it is a sub-directory of the current URL
     def addRedirectDirectory(self, path):
-        # Resolve the redirect header relative to the current URL and add the
-        # path to self.directories if it is a subdirectory of the current URL
 
         baseUrl = self.currentUrl.rstrip("/") + "/" + self.currentDirectory
 
