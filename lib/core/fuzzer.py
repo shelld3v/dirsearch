@@ -54,6 +54,7 @@ class Fuzzer(object):
         self.errorCallbacks = errorCallbacks
         self.matches = []
 
+    # Wait until all threads finished
     def wait(self, timeout=None):
         for thread in self.threads:
             thread.join(timeout)
@@ -63,6 +64,7 @@ class Fuzzer(object):
 
         return True
 
+    # Setup the calibration for many path types
     def setupScanners(self):
         if len(self.scanners):
             self.scanners = {}
@@ -76,6 +78,7 @@ class Fuzzer(object):
                 self.requester, self.testFailPath, "." + extension
             )
 
+    # Setup brute-forcing threads
     def setupThreads(self):
         if len(self.threads):
             self.threads = []
@@ -85,6 +88,7 @@ class Fuzzer(object):
             newThread.daemon = True
             self.threads.append(newThread)
 
+    # Check the path type for the calibration
     def getScannerFor(self, path):
         if path.endswith("/"):
             return self.scanners["/"]
@@ -99,6 +103,7 @@ class Fuzzer(object):
         # By default, returns empty tester
         return self.defaultScanner
 
+    # Start everything
     def start(self):
         # Setting up testers
         self.setupScanners()
@@ -118,19 +123,24 @@ class Fuzzer(object):
 
         self.play()
 
+    # Play
     def play(self):
         self.playEvent.set()
 
+    # Pause threads
     def pause(self):
         self.playEvent.clear()
         for thread in self.threads:
             if thread.is_alive():
                 self.pausedSemaphore.acquire()
 
+    # Stop threads
     def stop(self):
         self.running = False
         self.play()
 
+    # Perform the request then scan the response to check if the
+    # path is valid or not
     def scan(self, path):
         response = self.requester.request(path)
         result = None
@@ -138,19 +148,24 @@ class Fuzzer(object):
             result = None if response.status == 404 else response.status
         return result, response
 
+    # Check if threads are running
     def isRunning(self):
         return self.running
 
+    # Finish the progress
     def finishThreads(self):
         self.running = False
         self.finishedEvent.set()
 
+    # Check if everything has been finished
     def isFinished(self):
         return self.runningThreadsCount == 0
 
+    # Stop a thread
     def stopThread(self):
         self.runningThreadsCount -= 1
 
+    # Brute-forcer
     def thread_proc(self):
         self.playEvent.wait()
 
