@@ -48,6 +48,7 @@ class Scanner(object):
         firstPath = self.preffix + self.testPath + self.suffix
         firstResponse = self.requester.request(firstPath)
         self.invalidStatus = firstResponse.status
+        self.invalidHeaders = firstResponse.headers
 
         if self.invalidStatus == 404:
             # Using the response status code is enough :-}
@@ -67,9 +68,10 @@ class Scanner(object):
             self.requester, firstPath, firstResponse.body, secondResponse.body
         )
 
+        # Rounding to 2 decimals
         baseRatio = float(
             "{0:.2f}".format(self.dynamicParser.comparisonRatio)
-        )  # Rounding to 2 decimals
+        )
 
         # If response length is small, adjust ratio
         if len(firstResponse) < 2000:
@@ -100,10 +102,13 @@ class Scanner(object):
         if self.invalidStatus == response.status == 404:
             return False
 
-        if self.invalidStatus != response.status:
+        elif self.invalidStatus != response.status:
             return True
 
-        if self.redirectRegExp and response.redirect:
+        elif len(self.invalidHeaders) != len(response.headers):
+            return True
+
+        elif self.redirectRegExp and response.redirect:
             # If redirection doesn't match the rule, mark as found
             if re.match(self.redirectRegExp, response.redirect) is None:
                 return True
