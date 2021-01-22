@@ -27,7 +27,7 @@ from threading import Lock
 from queue import Queue
 
 from lib.connection import Requester, RequestException
-from lib.core import Dictionary, Fuzzer, ReportManager
+from lib.core import Dictionary, Fuzzer, ReportManager, Raw
 from lib.reports import JSONReport, XMLReport, PlainTextReport, SimpleReport, MarkdownReport, CSVReport
 from lib.utils import FileUtils
 
@@ -63,17 +63,43 @@ class Controller(object):
         self.savePath = self.script_path
         self.doneDirs = []
 
-        self.urlList = list(filter(None, dict.fromkeys(self.arguments.urlList)))
-
-        self.recursive_level_max = self.arguments.recursive_level_max
-
         if self.arguments.httpmethod.lower() not in [
             "get", "head", "post", "put", "patch", "options", "delete", "trace", "debug", "connect"
         ]:
             self.output.error("Invalid HTTP method")
             exit(1)
 
-        self.httpmethod = self.arguments.httpmethod.lower()
+        if self.arguments.urlList:
+            default_headers = {
+                "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36",
+                "Accept-Language": "*",
+                "Accept-Encoding": "*",
+                "Keep-Alive": "300",
+                "Cache-Control": "max-age=0",
+            }
+
+            self.urlList = list(filter(None, dict.fromkeys(self.arguments.urlList)))
+            self.httpmethod = self.arguments.httpmethod.lower()
+            self.data = self.arguments.data
+            self.headers = {**default_headers, **self.arguments.headers}
+            self.cookie = self.arguments.cookie
+            self.useragent = self.arguments.useragent
+        else:
+            default_headers = {
+                "User-agent": None,
+                "Accept-Encoding": None,
+                "Accept": None,
+            }
+
+            _raw = Raw(self.arguments.raw_file, self.arguments.scheme)
+            self.urlList = [_raw.url()]
+            self.httpmethod = _raw.method()
+            self.data = _raw.data()
+            self.headers = {**default_headers, **_raw.headers()}
+            self.cookie = _raw.cookie()
+            self.useragent = _raw.user_agent()
+
+        self.recursive_level_max = self.arguments.recursive_level_max
 
         if self.arguments.saveHome:
             savePath = self.getSavePath()
@@ -163,15 +189,15 @@ class Controller(object):
                 try:
                     gc.collect()
                     self.reportManager = ReportManager()
-                    self.currentUrl = url
-                    self.output.setTarget(self.currentUrl)
+                    self.currentUrl = url if url.endswith("/") else url + "/"
+                    self.output.setTarget(self.currentUrl, self.arguments.scheme)
                     self.ignore429 = False
 
                     try:
                         self.requester = Requester(
                             url,
-                            cookie=self.arguments.cookie,
-                            useragent=self.arguments.useragent,
+                            cookie=self.cookie,
+                            useragent=self.useragent,
                             maxPool=self.arguments.threadsCount,
                             maxRetries=self.arguments.maxRetries,
                             timeout=self.arguments.timeout,
@@ -181,8 +207,12 @@ class Controller(object):
                             redirect=self.arguments.redirect,
                             requestByHostname=self.arguments.requestByHostname,
                             httpmethod=self.httpmethod,
-                            data=self.arguments.data,
+                            data=self.data,
+                            scheme=self.arguments.scheme,
                         )
+
+                        for key, value in self.headers.items():
+                            self.requester.setHeader(key, value)
 
                         self.requester.request("")
 
@@ -192,9 +222,6 @@ class Controller(object):
 
                     if self.arguments.useRandomAgents:
                         self.requester.setRandomAgents(self.randomAgents)
-
-                    for key, value in arguments.headers.items():
-                        self.requester.setHeader(key, value)
 
                     # Initialize directories Queue with start Path
                     self.basePath = self.requester.basePath
@@ -223,7 +250,7 @@ class Controller(object):
                         errorCallbacks=errorCallbacks,
                     )
                     try:
-                        self.wait()
+                        self.prepare()
                     except RequestException as e:
                         self.output.error(
                             "Fatal error during site scanning: " + e.args[0]["message"]
@@ -542,8 +569,9 @@ class Controller(object):
                 for subdir in self.scanSubdirs:
                     if subdir == path.path + "/":
                         pathIsInScanSubdirs = True
+                        break
 
-            if self.recursive and not pathIsInScanSubdirs and "?" not in path.path:
+            if self.recursive and not pathIsInScanSubdirs and "?" not in path.path and "#" not in path.path:
                 if path.response.redirect:
                     addedToQueue = self.addRedirectDirectory(path)
 
@@ -645,15 +673,14 @@ class Controller(object):
     def processPaths(self):
         while True:
             try:
-                while not self.fuzzer.wait(0.3):
+                while not self.fuzzer.wait(0.25):
                     if not self.ignore429 and self.got429:
-                        self.handlePause("429 Response code detected: Server is blocking requests...")
-                    continue
+                        self.handlePause("429 status code detected: Pausing threads, please wait...")
                 break
             except (KeyboardInterrupt):
                 self.handlePause("CTRL+C detected: Pausing threads, please wait...")
 
-    def wait(self):
+    def prepare(self):
         while not self.directories.empty():
             gc.collect()
             self.currentJob += 1
@@ -670,6 +697,14 @@ class Controller(object):
             self.processPaths()
 
         return
+
+    def addPort(self, url):
+        parsed = urllib.parse.urlparse(url)
+        if ":" not in parsed.netloc:
+            port = "443" if parsed.scheme == "https" else "80"
+            url = url.replace(parsed.netloc, parsed.netloc + ":" + port)
+
+        return url
 
     def addDirectory(self, path):
         if path.endswith("/"):
@@ -698,14 +733,14 @@ class Controller(object):
         # Resolve the redirect header relative to the current URL and add the
         # path to self.directories if it is a subdirectory of the current URL
 
-        baseUrl = self.currentUrl.rstrip("/") + "/" + self.currentDirectory
-
-        baseUrl = baseUrl.rstrip("/") + "/"
+        baseUrl = self.currentUrl + self.currentDirectory
+        baseUrl = self.addPort(baseUrl)
 
         absoluteUrl = urllib.parse.urljoin(baseUrl, path.response.redirect)
+        absoluteUrl = self.addPort(absoluteUrl)
 
         if absoluteUrl.startswith(baseUrl) and absoluteUrl != baseUrl and absoluteUrl.endswith("/"):
-            dir = absoluteUrl[len(self.currentUrl.rstrip("/")) + 1:]
+            dir = absoluteUrl[len(self.addPort(self.currentUrl)):]
 
             if dir in self.doneDirs:
                 return False
