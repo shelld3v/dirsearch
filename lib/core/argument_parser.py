@@ -17,9 +17,11 @@
 #  Author: Mauro Soria
 
 import sys
+import email
 
 from optparse import OptionParser, OptionGroup
 from ipaddress import IPv4Network
+from io import StringIO
 
 from lib.utils.default_config_parser import DefaultConfigParser
 from lib.utils.file_utils import File
@@ -144,10 +146,7 @@ class ArgumentParser(object):
         if options.headers:
             try:
                 self.headers = dict(
-                    (key, value)
-                    for (key, value) in (
-                        header.split(":", 1) for header in options.headers
-                    )
+                    email.message_from_file(StringIO("\r\n".join(options.headers)))
                 )
             except Exception:
                 print("Invalid headers")
@@ -171,9 +170,11 @@ class ArgumentParser(object):
                         print("The header list cannot be read")
                         exit(1)
 
-                    lines = hlist.get_lines()
-                    for line in lines:
-                        key, value = line.split(":")[0], line.split(":")[1]
+                    headers = dict(
+                        email.message_from_file(StringIO(hlist.read()))
+                    )
+
+                    for key, value in headers.items():
                         self.headers[key] = value
             except Exception as e:
                 print("Error in headers file: " + str(e))
@@ -356,22 +357,12 @@ class ArgumentParser(object):
         else:
             self.scanSubdirs = []
 
-        if not self.recursive and options.excludeSubdirs:
-            self.excludeSubdirs = None
-
-        elif options.excludeSubdirs:
+        if options.excludeSubdirs:
             self.excludeSubdirs = list(
-                oset([subdir.strip() for subdir in options.excludeSubdirs.split(",")])
+                oset(
+                    [subdir.strip(" /") + "/" for subdir in options.excludeSubdirs.split(",")]
+                )
             )
-
-            for i in range(len(self.excludeSubdirs)):
-
-                while self.excludeSubdirs[i].startswith("/"):
-                    self.excludeSubdirs[i] = self.excludeSubdirs[i][1:]
-
-                while self.excludeSubdirs[i].endswith("/"):
-                    self.excludeSubdirs[i] = self.excludeSubdirs[i][:-1]
-            self.excludeSubdirs = list(oset(self.excludeSubdirs))
 
         else:
             self.excludeSubdirs = None
@@ -445,7 +436,7 @@ class ArgumentParser(object):
 
         # Request
         self.httpmethod = config.safe_get(
-            "request", "httpmethod", "get", ["get", "head", "post", "put", "patch", "delete", "trace", "options", "debug", "connect"]
+            "request", "httpmethod", "get"
         )
         self.headerList = config.safe_get("request", "headers-file", None)
         self.redirect = config.safe_getboolean("request", "follow-redirects", False)
@@ -459,7 +450,11 @@ class ArgumentParser(object):
         self.proxy = config.safe_get("connection", "proxy", None)
         self.proxylist = config.safe_get("connection", "proxy-list", None)
         self.scheme = config.safe_get("connection", "scheme", "http", ["http", "https"])
+<<<<<<< HEAD
         self.matches_proxy = config.safe_get("connection", "matches-proxy", None)
+=======
+        self.matches_proxy = config.safe_get("connection", "replay-proxy", None)
+>>>>>>> upstream/master
         self.requestByHostname = config.safe_getboolean(
             "connection", "request-by-hostname", False
         )
@@ -500,7 +495,7 @@ information at https://github.com/maurosoria/dirsearch.""")
         dictionary.add_option("--suffixes", action="store", dest="suffixes", default=self.suffixes,
                               help="Add custom suffixes to all entries, ignore directories (separated by commas)")
         dictionary.add_option("--only-selected", dest="onlySelected", action="store_true",
-                              help="Only entries with selected extensions or no extension + directories")
+                              help="Only directories + files with selected extensions (or no extension)")
         dictionary.add_option("--remove-extensions", dest="noExtension", action="store_true",
                               help="Remove extensions in all wordlist entries (Example: admin.php -> admin)")
         dictionary.add_option("-U", "--uppercase", action="store_true", dest="uppercase", default=self.uppercase,
