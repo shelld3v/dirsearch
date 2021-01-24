@@ -63,17 +63,7 @@ class Controller(object):
         self.savePath = self.script_path
         self.doneDirs = []
 
-<<<<<<< HEAD
-        if self.arguments.httpmethod.lower() not in [
-            "get", "head", "post", "put", "patch", "options", "delete", "trace", "debug", "connect"
-        ]:
-            self.output.error("Invalid HTTP method")
-            exit(1)
-
-        if self.arguments.urlList:
-=======
         if arguments.urlList:
->>>>>>> upstream/master
             default_headers = {
                 "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36",
                 "Accept-Language": "*",
@@ -82,15 +72,6 @@ class Controller(object):
                 "Cache-Control": "max-age=0",
             }
 
-<<<<<<< HEAD
-            self.urlList = list(filter(None, dict.fromkeys(self.arguments.urlList)))
-            self.httpmethod = self.arguments.httpmethod.lower()
-            self.data = self.arguments.data
-            self.headers = {**default_headers, **self.arguments.headers}
-            self.cookie = self.arguments.cookie
-            self.useragent = self.arguments.useragent
-        else:
-=======
             self.urlList = list(filter(None, dict.fromkeys(arguments.urlList)))
             self.httpmethod = arguments.httpmethod.lower()
             self.data = arguments.data
@@ -99,18 +80,13 @@ class Controller(object):
             self.useragent = arguments.useragent
         else:
             # Overwrite python-requests default headers
->>>>>>> upstream/master
             default_headers = {
                 "User-agent": None,
                 "Accept-Encoding": None,
                 "Accept": None,
             }
 
-<<<<<<< HEAD
-            _raw = Raw(self.arguments.raw_file, self.arguments.scheme)
-=======
             _raw = Raw(arguments.raw_file, arguments.scheme)
->>>>>>> upstream/master
             self.urlList = [_raw.url()]
             self.httpmethod = _raw.method()
             self.data = _raw.data()
@@ -118,15 +94,9 @@ class Controller(object):
             self.cookie = _raw.cookie()
             self.useragent = _raw.user_agent()
 
-<<<<<<< HEAD
-        self.recursive_level_max = self.arguments.recursive_level_max
-
-        if self.arguments.saveHome:
-=======
         self.recursive_level_max = arguments.recursive_level_max
 
         if arguments.saveHome:
->>>>>>> upstream/master
             savePath = self.getSavePath()
 
             if not FileUtils.exists(savePath):
@@ -223,19 +193,6 @@ class Controller(object):
                             url,
                             cookie=self.cookie,
                             useragent=self.useragent,
-<<<<<<< HEAD
-                            maxPool=self.arguments.threadsCount,
-                            maxRetries=self.arguments.maxRetries,
-                            timeout=self.arguments.timeout,
-                            ip=self.arguments.ip,
-                            proxy=self.arguments.proxy,
-                            proxylist=self.arguments.proxylist,
-                            redirect=self.arguments.redirect,
-                            requestByHostname=self.arguments.requestByHostname,
-                            httpmethod=self.httpmethod,
-                            data=self.data,
-                            scheme=self.arguments.scheme,
-=======
                             maxPool=arguments.threadsCount,
                             maxRetries=arguments.maxRetries,
                             timeout=arguments.timeout,
@@ -247,7 +204,6 @@ class Controller(object):
                             httpmethod=self.httpmethod,
                             data=self.data,
                             scheme=arguments.scheme,
->>>>>>> upstream/master
                         )
 
                         for key, value in self.headers.items():
